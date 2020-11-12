@@ -1,8 +1,5 @@
 package http
 
-import (
-)
-
 type methods map[string]interface{}
 
 type Resource struct {

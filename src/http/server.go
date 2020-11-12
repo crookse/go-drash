@@ -9,9 +9,13 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-type Server struct {}
-
 var resources = []*Resource{}
+
+///////////////////////////////////////////////////////////////////////////////
+// EXPORTED ///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+type Server struct {}
 
 // Add resources to the server
 func (s Server) AddResources(resourcesArr ... *Resource) {
@@ -32,28 +36,16 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	
-	CallHttpMethod(resource, method, ctx)
+	callHttpMethod(resource, method, ctx)
 }
 
-func (s Server) findResource(uri string) (*Resource, *errors.HttpError) {
-	if uri == "/" {
-		return resources[0], nil
-	}
-
-	return nil, s.handleError(404, "Not Found")
-}
-
-func (s Server) handleError(code int, message string) (*errors.HttpError) {
-	e := new(errors.HttpError)
-	e.Code = code
-	e.Message = message
-	return e
-}
-
+///////////////////////////////////////////////////////////////////////////////
+// NON-EXPORTED ///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 // This code was taken from the following article:
 // medium.com/@vicky.kurniawan/go-call-a-function-from-string-name-30b41dcb9e12
-func CallHttpMethod(
+func callHttpMethod(
 	resource *Resource,
 	funcName string,
 	params ... interface{},
@@ -80,4 +72,22 @@ func CallHttpMethod(
 	}
 
 	return
+}
+
+// Find the resource in question given the URI
+func (s Server) findResource(uri string) (*Resource, *errors.HttpError) {
+	if uri == "/" {
+		return resources[0], nil
+	}
+
+	return nil, s.handleError(404, "Not Found")
+}
+
+// Handle server errors -- making sure to send HTTP error responses. HTTP error
+// responses should always have a code and a message.
+func (s Server) handleError(code int, message string) (*errors.HttpError) {
+	e := new(errors.HttpError)
+	e.Code = code
+	e.Message = message
+	return e
 }
