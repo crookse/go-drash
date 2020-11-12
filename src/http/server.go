@@ -14,7 +14,7 @@ type Server struct {}
 var resources = []*Resource{}
 
 // Add resources to the server
-func (s Server) AddResource(resourcesArr ... *Resource) {
+func (s Server) AddResources(resourcesArr ... *Resource) {
 	for i := range resourcesArr {
 		resources = append(resources, resourcesArr[i])
 	}

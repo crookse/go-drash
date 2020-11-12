@@ -6,7 +6,7 @@ import (
 type methods map[string]interface{}
 
 type Resource struct {
-	uris []string
+	Uris []string
 	response Response
 	Methods methods
 }
