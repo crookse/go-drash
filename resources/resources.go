@@ -15,6 +15,7 @@ func HomeResource() *http.Resource {
 
 	resource.Methods = map[string]interface{}{
 		"GET": func(ctx *fasthttp.RequestCtx) {
+			fmt.Println(string(ctx.Method()))
 			fmt.Fprintf(ctx, "Hi, Sara!")
 		},
 	}
