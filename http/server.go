@@ -21,7 +21,7 @@ var resources = []Resource{}
 
 type Server struct {}
 
-type ServerOptions struct {
+type HttpOptions struct {
 	Hostname string
 	Port int
 }
@@ -39,11 +39,6 @@ func (s Server) AddResources(resourcesArr ... func() Resource) {
 	}
 }
 
-type Context struct {
-	Response Response
-	Request Request
-}
-
 // Handle all http requests with this function
 func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 
@@ -59,12 +54,7 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	
-	response := new(Response)
-	context := Context{
-		Response: *response,
-		Request: request,
-	}
-	resourceResponse, err := callHttpMethod(resource, method, context)
+	resourceResponse, err := callHttpMethod(resource, method, request)
 
 	if err != nil {
 		ctx.SetBody([]byte(err.Message))
@@ -75,7 +65,7 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 }
 
 // Run the server
-func (s Server) Run(o ServerOptions) {
+func (s Server) Run(o HttpOptions) {
 	address := fmt.Sprintf("%s:%d", o.Hostname, o.Port)
 	err := fasthttp.ListenAndServe(address, s.HandleRequest)
 

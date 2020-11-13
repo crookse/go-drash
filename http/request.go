@@ -10,4 +10,5 @@ import (
 
 type Request struct {
 	Ctx *fasthttp.RequestCtx
+	Response Response
 }
