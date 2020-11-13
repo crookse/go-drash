@@ -46,6 +46,15 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 	}
 }
 
+// Run the server
+func (s Server) Run(addr string) {
+	err := fasthttp.ListenAndServe(addr, s.HandleRequest)
+
+	if err != nil {
+		log.Fatalf("Error in ListenAndServe: %s", err)
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // FILE MARKER - MEMBERS NOT EXPORTED /////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
