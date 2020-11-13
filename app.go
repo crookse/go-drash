@@ -22,11 +22,14 @@ func main() {
 
 	s.AddResources(
 		resources.HomeResource,
-		resources.UsersResource)
+		resources.UsersResource,
+	)
 
 	fmt.Println("Server started at " + *addr)
 
-	if err := fasthttp.ListenAndServe(*addr, s.HandleRequest); err != nil {
+	err := fasthttp.ListenAndServe(*addr, s.HandleRequest)
+
+	if err != nil {
 		log.Fatalf("Error in ListenAndServe: %s", err)
 	}
 }
