@@ -15,7 +15,7 @@ import (
   "github.com/drashland/go-drash/http"
 )
 
-func HomeResource() *http.Resource {
+func HomeResource() http.Resource {
   resource := new(http.Resource)
   resource.Uris = []string{"/"}
   resource.Methods = map[string]interface{}{
