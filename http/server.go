@@ -12,7 +12,7 @@ import (
 // FILE MARKER - VARIABLE DECLARATIONS ////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-var resources = []*Resource{}
+var resources = []Resource{}
 
 ///////////////////////////////////////////////////////////////////////////////
 // FILE MARKER - MEMBERS EXPORTED /////////////////////////////////////////////
@@ -21,7 +21,7 @@ var resources = []*Resource{}
 type Server struct {}
 
 // Add resources to the server
-func (s Server) AddResources(resourcesArr ... func() *Resource) {
+func (s Server) AddResources(resourcesArr ... func() Resource) {
 	for i := range resourcesArr {
 		resources = append(resources, resourcesArr[i]())
 	}
@@ -69,7 +69,7 @@ func (s Server) Run(addr string) {
 // This code was taken from the following article:
 // medium.com/@vicky.kurniawan/go-call-a-function-from-string-name-30b41dcb9e12
 func callHttpMethod(
-	resource *Resource,
+	resource Resource,
 	funcName string,
 	params ... interface{},
 ) (response Response, err *errors.HttpError) {
@@ -106,12 +106,12 @@ func callHttpMethod(
 }
 
 // Find the resource in question given the URI
-func (s Server) findResource(uri string) (*Resource, *errors.HttpError) {
+func (s Server) findResource(uri string) (Resource, *errors.HttpError) {
 	if uri == "/" {
 		return resources[0], nil
 	}
 
-	return nil, s.handleError(404, "Not Found")
+	return Resource{}, s.handleError(404, "Not Found")
 }
 
 // Handle server errors -- making sure to send HTTP error responses. HTTP error
