@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"log"
 
-	"github.com/drashland/godrash/errors"
+	"github.com/drashland/go-drash/errors"
 	"github.com/valyala/fasthttp"
 )
 
