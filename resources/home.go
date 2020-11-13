@@ -14,11 +14,12 @@ func HomeResource() *http.Resource {
 	resource.Uris = []string{"/"}
 
 	resource.Methods = map[string]interface{}{
-		"GET": func(ctx *fasthttp.RequestCtx) {
-			fmt.Println(string(ctx.Method()))
-			fmt.Fprintf(ctx, "Hi, Sara!")
-		},
+		"GET": GET,
 	}
 
 	return resource;
+}
+
+func GET(ctx *fasthttp.RequestCtx) {
+	fmt.Fprintf(ctx, "Hello World!")
 }
