@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"reflect"
 
 	"../errors"
@@ -36,11 +35,16 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 	resource, err := s.findResource(uri)
 
 	if err != nil {
-		fmt.Fprintf(ctx, err.Message)
+		ctx.SetBody([]byte(err.Message))
 		return
 	}
 	
-	callHttpMethod(resource, method, ctx)
+	_, err = callHttpMethod(resource, method, ctx)
+
+	if err != nil {
+		ctx.SetBody([]byte(err.Message))
+		return
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -52,30 +56,28 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 func callHttpMethod(
 	resource *Resource,
 	funcName string,
-	params ... interface{},
-) (result interface{}, err error) {
+	ctx interface{},
+) (result interface{}, err *errors.HttpError) {
 	f := reflect.ValueOf(resource.Methods[funcName])
 
-	if len(params) != f.Type().NumIn() {
-		e := new(errors.HttpError)
-		e.Code = 500
-		e.Message = "Internal Server Error"
-		return
+	// Is the method defined?
+	if !f.IsValid() {
+		var err = new(errors.HttpError)
+		err.Code = 405
+		err.Message = "Method Not Allowed"
+		return nil, err
 	}
 
-	in := make([]reflect.Value, len(params))
-	for k, param := range params {
-		in[k] = reflect.ValueOf(param)
-	}
+	args := []reflect.Value{reflect.ValueOf(ctx)}
 
 	var res []reflect.Value
-	res = f.Call(in)
+	res = f.Call(args)
 
 	if len(res) > 0 {
 		result = res[0].Interface()
 	}
 
-	return
+	return result, nil
 }
 
 // Find the resource in question given the URI

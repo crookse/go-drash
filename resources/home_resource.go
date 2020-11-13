@@ -20,7 +20,10 @@ func HomeResource() *http.Resource {
 	return resource;
 }
 
-
 func get(ctx *fasthttp.RequestCtx) {
-	fmt.Fprintf(ctx, "Hello World!")
+	fmt.Fprintf(ctx, "GET  World!")
+}
+
+func post(ctx *fasthttp.RequestCtx) {
+	fmt.Fprintf(ctx, "POST World!")
 }
