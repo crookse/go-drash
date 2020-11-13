@@ -12,31 +12,28 @@ A REST microframework for Go.
 package resources
 
 import (
-	"fmt"
-	"github.com/drashland/go-drash/http"
+  "github.com/drashland/go-drash/http"
 )
 
 func HomeResource() *http.Resource {
-
-	resource := new(http.Resource)
-
-	resource.Uris = []string{"/"}
-
-	resource.Methods = map[string]interface{}{
-		"GET": get,
-	}
-
-	return resource;
+  resource := new(http.Resource)
+  resource.Uris = []string{"/"}
+  resource.Methods = map[string]interface{}{
+    "GET": get,
+  }
+  return resource;
 }
 
-// Registered, so this should output a response as expected
-func get(request http.Request) {
-	fmt.Fprintf(request.Ctx, "GET  World!")
+// This is registered, so it will output as expected
+func get(request http.Request, response http.Response) http.Response {
+  response.Body = "Hello World!"
+  return response
 }
 
-// Not registered in Methods, so this should throw a 405
-func post(request http.Request) {
-	fmt.Fprintf(request.Ctx, "POST World!")
+// This is not registered, so it will throw a 405 error
+func post(request http.Request, response http.Response) http.Response {
+  response.Body = "test"
+  return response
 }
 ```
 
