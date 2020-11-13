@@ -42,12 +42,15 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	
-	_, err = callHttpMethod(resource, method, request)
+	response := new(Response)
+	resourceResponse, err := callHttpMethod(resource, method, request, *response)
 
 	if err != nil {
 		ctx.SetBody([]byte(err.Message))
 		return
 	}
+
+	ctx.SetBody([]byte(resourceResponse.Body))
 }
 
 // Run the server
@@ -68,8 +71,8 @@ func (s Server) Run(addr string) {
 func callHttpMethod(
 	resource *Resource,
 	funcName string,
-	request interface{},
-) (result interface{}, err *errors.HttpError) {
+	params ... interface{},
+) (response Response, err *errors.HttpError) {
 	f := reflect.ValueOf(resource.Methods[funcName])
 
 	// Is the method defined?
@@ -77,19 +80,29 @@ func callHttpMethod(
 		var err = new(errors.HttpError)
 		err.Code = 405
 		err.Message = "Method Not Allowed"
-		return nil, err
+		var r = Response{}
+		return r, err
 	}
 
-	args := []reflect.Value{reflect.ValueOf(request)}
+    in := make([]reflect.Value, len(params))
+    for k, param := range params {
+        in[k] = reflect.ValueOf(param)
+    }
 
-	var res []reflect.Value
-	res = f.Call(args)
+	var result []reflect.Value
+	result = f.Call(in)
 
-	if len(res) > 0 {
-		result = res[0].Interface()
+	if len(result) > 0 {
+		data := result[0].Interface().(Response)
+		return data, nil
 	}
 
-	return result, nil
+	err = new(errors.HttpError)
+	err.Code = 418
+	err.Message = "I'm a teapot"
+
+	r := Response{}
+	return r, err
 }
 
 // Find the resource in question given the URI
