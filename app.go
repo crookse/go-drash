@@ -7,7 +7,7 @@ import (
 
 	"./resources"
 
-	"github.com/drashland/go-drash"
+	godrash "github.com/drashland/go-drash"
 	"github.com/valyala/fasthttp"
 )
 
@@ -18,7 +18,7 @@ var (
 func main() {
 	flag.Parse()
 
-	s := new(http.Server)
+	s := new(godrash.http.Server)
 
 	s.AddResources(
 		resources.HomeResource,
