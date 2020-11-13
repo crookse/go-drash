@@ -29,8 +29,11 @@ func (s Server) AddResources(resourcesArr ... func() *Resource) {
 
 // Handle all http requests with this function
 func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
-	uri := string(ctx.Path())
-	method := string(ctx.Method())
+
+	request := Request{Ctx: ctx}
+
+	uri := string(request.Ctx.Path())
+	method := string(request.Ctx.Method())
 
 	resource, err := s.findResource(uri)
 
@@ -39,7 +42,7 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	
-	_, err = callHttpMethod(resource, method, ctx)
+	_, err = callHttpMethod(resource, method, request)
 
 	if err != nil {
 		ctx.SetBody([]byte(err.Message))
@@ -65,7 +68,7 @@ func (s Server) Run(addr string) {
 func callHttpMethod(
 	resource *Resource,
 	funcName string,
-	ctx interface{},
+	request interface{},
 ) (result interface{}, err *errors.HttpError) {
 	f := reflect.ValueOf(resource.Methods[funcName])
 
@@ -77,7 +80,7 @@ func callHttpMethod(
 		return nil, err
 	}
 
-	args := []reflect.Value{reflect.ValueOf(ctx)}
+	args := []reflect.Value{reflect.ValueOf(request)}
 
 	var res []reflect.Value
 	res = f.Call(args)
