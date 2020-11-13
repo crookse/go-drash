@@ -2,8 +2,9 @@ package http
 
 import (
 	"reflect"
+	"log"
 
-	"../errors"
+	"github.com/drashland/godrash/errors"
 	"github.com/valyala/fasthttp"
 )
 
