@@ -30,7 +30,7 @@ func HomeResource() http.Resource {
 
 // This is registered, so it will output as expected
 func get(request http.Request, response http.Response) http.Response {
-  response.Body = "Hello World!"
+  response.Body = "Hello World! Go + Drash is cool!"
   return response
 }
 
@@ -86,5 +86,5 @@ $ go run app.go
 
 ```
 $ curl localhost:1997
-GET World!
+Hello World! Go + Drash is cool!
 ```
