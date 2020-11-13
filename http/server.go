@@ -21,6 +21,11 @@ var resources = []Resource{}
 
 type Server struct {}
 
+type ServerOptions struct {
+	Hostname string
+	Port int
+}
+
 // Add resources to the server
 func (s Server) AddResources(resourcesArr ... func() Resource) {
 	for i := range resourcesArr {
@@ -32,6 +37,11 @@ func (s Server) AddResources(resourcesArr ... func() Resource) {
 		resource.ParseUris()
 		fmt.Println(resource)
 	}
+}
+
+type Context struct {
+	Response Response
+	Request Request
 }
 
 // Handle all http requests with this function
@@ -50,7 +60,11 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 	}
 	
 	response := new(Response)
-	resourceResponse, err := callHttpMethod(resource, method, request, *response)
+	context := Context{
+		Response: *response,
+		Request: request,
+	}
+	resourceResponse, err := callHttpMethod(resource, method, context)
 
 	if err != nil {
 		ctx.SetBody([]byte(err.Message))
@@ -61,8 +75,9 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 }
 
 // Run the server
-func (s Server) Run(addr string) {
-	err := fasthttp.ListenAndServe(addr, s.HandleRequest)
+func (s Server) Run(o ServerOptions) {
+	address := fmt.Sprintf("%s:%d", o.Hostname, o.Port)
+	err := fasthttp.ListenAndServe(address, s.HandleRequest)
 
 	if err != nil {
 		log.Fatalf("Error in ListenAndServe: %s", err)
