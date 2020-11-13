@@ -67,7 +67,6 @@ func main() {
 
 	s.AddResources(
 		resources.HomeResource,
-		resources.UsersResource,
 	)
 
 	fmt.Println("Server started at " + *addr)
