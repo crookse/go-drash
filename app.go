@@ -6,8 +6,8 @@ import (
 	"log"
 
 	"./resources"
-	"./src/http"
 
+	"github.com/drashland/go-drash"
 	"github.com/valyala/fasthttp"
 )
 
