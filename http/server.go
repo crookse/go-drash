@@ -3,7 +3,7 @@ package http
 import (
 	"reflect"
 
-	"github.com/drashland/godrash"
+	"../errors"
 	"github.com/valyala/fasthttp"
 )
 
@@ -65,12 +65,12 @@ func callHttpMethod(
 	resource *Resource,
 	funcName string,
 	ctx interface{},
-) (result interface{}, err *godrash.errors.HttpError) {
+) (result interface{}, err *errors.HttpError) {
 	f := reflect.ValueOf(resource.Methods[funcName])
 
 	// Is the method defined?
 	if !f.IsValid() {
-		var err = new(godrash.errors.HttpError)
+		var err = new(errors.HttpError)
 		err.Code = 405
 		err.Message = "Method Not Allowed"
 		return nil, err
@@ -89,7 +89,7 @@ func callHttpMethod(
 }
 
 // Find the resource in question given the URI
-func (s Server) findResource(uri string) (*Resource, *godrash.errors.HttpError) {
+func (s Server) findResource(uri string) (*Resource, *errors.HttpError) {
 	if uri == "/" {
 		return resources[0], nil
 	}
@@ -99,8 +99,8 @@ func (s Server) findResource(uri string) (*Resource, *godrash.errors.HttpError) 
 
 // Handle server errors -- making sure to send HTTP error responses. HTTP error
 // responses should always have a code and a message.
-func (s Server) handleError(code int, message string) (*godrash.errors.HttpError) {
-	e := new(godrash.errors.HttpError)
+func (s Server) handleError(code int, message string) (*errors.HttpError) {
+	e := new(errors.HttpError)
 	e.Code = code
 	e.Message = message
 	return e
