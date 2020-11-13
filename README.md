@@ -16,11 +16,15 @@ import (
 )
 
 func HomeResource() http.Resource {
+
   resource := new(http.Resource)
+
   resource.Uris = []string{"/"}
+
   resource.Methods = map[string]interface{}{
     "GET": get,
   }
+
   return resource;
 }
 
