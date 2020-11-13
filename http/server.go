@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"reflect"
 	"log"
 
@@ -23,7 +24,13 @@ type Server struct {}
 // Add resources to the server
 func (s Server) AddResources(resourcesArr ... func() Resource) {
 	for i := range resourcesArr {
-		resources = append(resources, resourcesArr[i]())
+		resource := resourcesArr[i]()
+		resources = append(resources, resource)
+	}
+	for i := range resources {
+		resource := resources[i]
+		resource.ParseUris()
+		fmt.Println(resource)
 	}
 }
 
