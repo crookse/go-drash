@@ -22,9 +22,9 @@ var resources = []*Resource{}
 type Server struct {}
 
 // Add resources to the server
-func (s Server) AddResources(resourcesArr ... *Resource) {
+func (s Server) AddResources(resourcesArr ... func() *Resource) {
 	for i := range resourcesArr {
-		resources = append(resources, resourcesArr[i])
+		resources = append(resources, resourcesArr[i]())
 	}
 }
 
