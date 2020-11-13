@@ -7,13 +7,13 @@ A REST microframework for Go.
 1. Create your resource.
 
 ```go
-// File: /path/to/your/project/home_resource.go
+// File: /path/to/your/project/resources/home_resource.go
 
 package resources
 
 import (
 	"fmt"
-	"github.com/drashland/godrash/http"
+	"github.com/drashland/go-drash/http"
 )
 
 func HomeResource() *http.Resource {
@@ -29,10 +29,12 @@ func HomeResource() *http.Resource {
 	return resource;
 }
 
+// Registered, so this should output a response as expected
 func get(request http.Request) {
 	fmt.Fprintf(request.Ctx, "GET  World!")
 }
 
+// Not registered in Methods, so this should throw a 405
 func post(request http.Request) {
 	fmt.Fprintf(request.Ctx, "POST World!")
 }
@@ -41,6 +43,8 @@ func post(request http.Request) {
 2. Create your app.
 
 ```go
+// File: /path/to/your/project/app.go
+
 package main
 
 import (
@@ -48,7 +52,7 @@ import (
 	"fmt"
 
 	"./resources"
-	"github.com/drashland/godrash/http"
+	"github.com/drashland/go-drash/http"
 )
 
 var (
