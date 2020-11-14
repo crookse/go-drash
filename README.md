@@ -1,6 +1,6 @@
 # Go Drash
 
-A REST microframework for Go.
+A REST microframework for Go -- built on top of fasthttp.
 
 ## Quickstart
 
