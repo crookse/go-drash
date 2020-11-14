@@ -28,18 +28,6 @@ func HomeResource() http.Resource {
 		},
 	}
 }
-
-// This is registered, so it will output as expected
-func get(r http.Request) http.Response {
-	r.response.Body = "Hello World! Go + Drash is cool!"
-	return r.response
-}
-
-// This is not registered, so it will throw a 405 error
-func post(r http.Request) http.Response {
-	r.response.Body = "test"
-	return r.response
-}
 ```
 
 2. Create your app.
