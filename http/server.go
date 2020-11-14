@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"regexp"
 
+	"github.com/drashland/go-drash/services"
 	"github.com/drashland/go-drash/errors"
 	"github.com/valyala/fasthttp"
 )
@@ -27,8 +28,9 @@ type ServerOptions struct {
 }
 
 type Server struct {
-	Resources []func() Resource
+	Resources           []func() Resource
 	ResponseContentType string
+	Services            map[string]interface{}
 }
 
 // Handle all HTTP requests with this function
@@ -67,7 +69,7 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 
 // Run the server
 func (s Server) Run(o ServerOptions) {
-	addResources(s.Resources)
+	addResources(s)
 
 	if s.ResponseContentType != "" {
 		responseContentType = s.ResponseContentType
@@ -86,19 +88,40 @@ func (s Server) Run(o ServerOptions) {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Add resources to the server
-func addResources(resourcesArr []func() Resource) {
+func addResources(s Server) {
 
-	for i := range resourcesArr {
-		resource := resourcesArr[i]()
+	s.Services["ResourceIndexService"] = services.IndexService{
+		LookupTable: map[int]interface{}
+	}
+
+	for i := range s.resourcesArr {
+		// Create the resource
+		resource := s.resourcesArr[i]()
+
+		// TODO(crookse) Turn interface into ResourceHttpMethods struct
 		resource.Methods = map[string]interface{}{
 			"GET":    resource.GET,
 			"POST":   resource.POST,
 			"PUT":    resource.PUT,
 			"DELETE": resource.DELETE,
 		}
+
+		// Parse all URIs associated with this resource so that we can match
+		// request URIs to the resource's URIs.
 		resource.ParseUris()
-		resources = append(resources, resource)
+
+		s.Services["ResourceIndexService"].AddItem(
+			resource.UrisParsed.RegexPath,
+			resource,
+		)
 	}
+
+      // Include the regex path in the index, so we can search for the regex
+      // path during runtime in `.buildResource()`
+      this.services.resource_index_service.addItem(
+        [paths.regex_path],
+        resourceClass,
+      );
 }
 
 // This code was taken from the following article:
@@ -150,8 +173,9 @@ func buildError(code int, message string) *errors.HttpError {
 // cannot be found, then that is a 404 error -- most likey due to a resource
 // not being defined to handle the URI in question.
 func findResource(uri string) (Resource, *errors.HttpError) {
-	for i := range resources {
-		for k := range resources[i].UrisParsed {
+
+	for i := 0; i < len(resources); i++ {
+		for k := 0; i < len(resources[i].UrisParsed); k++ {
 			pathObj := resources[i].UrisParsed[k]
 			re := regexp.MustCompile(pathObj.RegexPath)
 			matches := re.FindAllString(uri, -1)
