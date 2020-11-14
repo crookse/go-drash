@@ -12,18 +12,18 @@ A REST microframework for Go built on top of [fasthttp](https://github.com/valya
 package resources
 
 import (
-  "github.com/drashland/go-drash/http"
+	"github.com/drashland/go-drash/http"
 )
 
 func HomeResource() http.Resource {
 	return http.Resource{
 
 		Uris: []string{
-			"/hello/:name",
+			"/",
 		},
 
-		GET: func (r http.Request) http.Response {
-			r.Response.Body = "Hello World! Go + Drash is cool!"
+		GET: func (r http.Request) *http.Response {
+			r.Response.Body = "Hello, World! Go + Drash is cool!"
 			return r.Response
 		},
 	}
@@ -46,12 +46,13 @@ import (
 
 func main() {
 	server := http.Server{
+		ResponseContentType: "application/json",
 		Resources: []func() http.Resource{
 			resources.HomeResource,
 		},
 	}
 
-	options := http.HttpOptions{
+	options := http.ServerOptions{
 		Hostname: "localhost",
 		Port: 1997,
 	}
