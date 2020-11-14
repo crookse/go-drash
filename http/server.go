@@ -28,8 +28,51 @@ type HttpOptions struct {
 	Port     int
 }
 
+// Handle all HTTP requests with this function
+func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
+
+	// Make a "Drash" request -- basically a wrapper around fasthttp's request
+	request := Request{Ctx: ctx}
+
+	uri := string(request.Ctx.Path())
+	method := string(request.Ctx.Method())
+
+	// Find the resource that matches the request's URI the best
+	resource, err := findResource(uri)
+	if err != nil {
+		request.Ctx.SetBody([]byte(err.Message))
+		return
+	}
+
+	// Make the request
+	response, err := callHttpMethod(resource, method, request)
+	if err != nil {
+		request.Ctx.SetBody([]byte(err.Message))
+		return
+	}
+
+	// Send the response
+	request.Ctx.SetBody([]byte(response.Body))
+}
+
+// Run the server
+func (s *Server) Run(o HttpOptions) {
+	addResources(s.Resources)
+
+	address := fmt.Sprintf("%s:%d", o.Hostname, o.Port)
+	err := fasthttp.ListenAndServe(address, s.HandleRequest)
+
+	if err != nil {
+		log.Fatalf("Error in ListenAndServe: %s", err)
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - MEMBERS NOT EXPORTED /////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 // Add resources to the server
-func (s Server) AddResources(resourcesArr []func() Resource) {
+func addResources(resourcesArr []func() Resource) {
 
 	for i := range resourcesArr {
 		resource := resourcesArr[i]()
@@ -48,49 +91,15 @@ func (s Server) AddResources(resourcesArr []func() Resource) {
 	}
 }
 
-// Handle all http requests with this function
-func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
-
-	request := Request{Ctx: ctx}
-
-	uri := string(request.Ctx.Path())
-	method := string(request.Ctx.Method())
-
-	resource, err := s.findResource(uri)
-
-	if err != nil {
-		ctx.SetBody([]byte(err.Message))
-		return
-	}
-
-	resourceResponse, err := callHttpMethod(resource, method, request)
-
-	if err != nil {
-		ctx.SetBody([]byte(err.Message))
-		return
-	}
-
-	ctx.SetBody([]byte(resourceResponse.Body))
-}
-
-// Run the server
-func (s *Server) Run(o HttpOptions) {
-	s.AddResources(s.Resources)
-
-	address := fmt.Sprintf("%s:%d", o.Hostname, o.Port)
-	err := fasthttp.ListenAndServe(address, s.HandleRequest)
-
-	if err != nil {
-		log.Fatalf("Error in ListenAndServe: %s", err)
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// FILE MARKER - MEMBERS NOT EXPORTED /////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
 // This code was taken from the following article:
 // medium.com/@vicky.kurniawan/go-call-a-function-from-string-name-30b41dcb9e12
+//
+// This code is used to allow "indexing" of a resource's HTTP methods. Without
+// this code, we would not be be able to make calls like the following:
+//
+//     resource[request.Method()].
+//
+// This is similar to how deno-drash makes its HTTP calls.
 func callHttpMethod(
 	resource Resource,
 	funcName string,
@@ -100,11 +109,7 @@ func callHttpMethod(
 
 	// Is the method defined?
 	if !f.IsValid() || f.IsNil() {
-		var err = new(errors.HttpError)
-		err.Code = 405
-		err.Message = "Method Not Allowed"
-		var r = Response{}
-		return r, err
+		return Response{}, errorResponse(405, "Method Not Allowed")
 	}
 
 	in := make([]reflect.Value, len(params))
@@ -120,28 +125,23 @@ func callHttpMethod(
 		return data, nil
 	}
 
-	err = new(errors.HttpError)
-	err.Code = 418
-	err.Message = "I'm a teapot"
-
-	r := Response{}
-	return r, err
-}
-
-// Find the resource in question given the URI
-func (s Server) findResource(uri string) (Resource, *errors.HttpError) {
-	if uri == "/" {
-		return resources[0], nil
-	}
-
-	return Resource{}, s.handleError(404, "Not Found")
+	return Response{}, errorResponse(418, "I'm a teapot")
 }
 
 // Handle server errors -- making sure to send HTTP error responses. HTTP error
 // responses should always have a code and a message.
-func (s Server) handleError(code int, message string) *errors.HttpError {
+func errorResponse(code int, message string) *errors.HttpError {
 	e := new(errors.HttpError)
 	e.Code = code
 	e.Message = message
 	return e
+}
+
+// Find the resource in question given the URI
+func findResource(uri string) (Resource, *errors.HttpError) {
+	if uri == "/" {
+		return resources[0], nil
+	}
+
+	return Resource{}, errorResponse(404, "Not Found")
 }
