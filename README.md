@@ -57,22 +57,21 @@ import (
 	"github.com/drashland/go-drash/http"
 )
 
-var (
-	addr = flag.String("addr", "localhost:1997", "TCP address to listen to")
-)
-
 func main() {
-	flag.Parse()
-
 	s := new(http.Server)
 
 	s.AddResources(
 		resources.HomeResource,
 	)
 
-	fmt.Println("Server started at " + *addr)
+	o := http.HttpOptions{
+		Hostname: "localhost",
+		Port: 1997,
+	}
 
-	s.Run(*addr)
+	fmt.Println("Server started at http://localhost:1997")
+
+	s.Run(o)
 }
 ```
 
