@@ -18,14 +18,16 @@ type ResourceUrisParsed struct {
 type methods map[string]interface{}
 
 type Resource struct {
+	// Http methods
+	DELETE func(r Request) Response
+	GET func(r Request) Response
+	POST func(r Request) Response
+	PUT func(r Request) Response
+
 	Methods methods
 	Uris []string
 	UrisParsed []ResourceUrisParsed
 	response Response
-	GET func(r Request) Response
-	POST func(r Request) Response
-	PUT func(r Request) Response
-	DELETE func(r Request) Response
 }
 
 func (r *Resource) ParseUris() {

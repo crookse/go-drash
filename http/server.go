@@ -19,7 +19,9 @@ var resources = []Resource{}
 // FILE MARKER - MEMBERS EXPORTED /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-type Server struct {}
+type Server struct {
+	Resources []func() Resource
+}
 
 type HttpOptions struct {
 	Hostname string
@@ -27,7 +29,7 @@ type HttpOptions struct {
 }
 
 // Add resources to the server
-func (s Server) AddResources(resourcesArr ... func() Resource) {
+func (s Server) AddResources(resourcesArr []func() Resource) {
 
 	for i := range resourcesArr {
 		resource := resourcesArr[i]()
@@ -43,7 +45,6 @@ func (s Server) AddResources(resourcesArr ... func() Resource) {
 	for i := range resources {
 		resource := resources[i]
 		resource.ParseUris()
-		fmt.Println(resource)
 	}
 }
 
@@ -73,7 +74,9 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 }
 
 // Run the server
-func (s Server) Run(o HttpOptions) {
+func (s *Server) Run(o HttpOptions) {
+	s.AddResources(s.Resources)
+
 	address := fmt.Sprintf("%s:%d", o.Hostname, o.Port)
 	err := fasthttp.ListenAndServe(address, s.HandleRequest)
 

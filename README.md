@@ -38,7 +38,6 @@ func HomeResource() http.Resource {
 package main
 
 import (
-	"flag"
 	"fmt"
 
 	"./resources"
@@ -46,20 +45,22 @@ import (
 )
 
 func main() {
-	s := new(http.Server)
+	server := http.Server{
+		Resources: []func() http.Resource{
+			resources.HomeResource,
+		},
+	}
 
-	s.AddResources(
-		resources.HomeResource,
-	)
-
-	o := http.HttpOptions{
+	options := http.HttpOptions{
 		Hostname: "localhost",
 		Port: 1997,
 	}
 
-	fmt.Println("Server started at http://localhost:1997")
+	fmt.Println(fmt.Sprintf(
+		"Server started at http://%s:%d", options.Hostname, options.Port,
+	))
 
-	s.Run(o)
+	server.Run(options)
 }
 ```
 
