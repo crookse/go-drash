@@ -16,16 +16,12 @@ import (
 )
 
 func HomeResource() http.Resource {
-
-  resource := new(http.Resource)
-
-  resource.Uris = []string{"/"}
-
-  resource.Methods = map[string]interface{}{
-    "GET": get,
-  }
-
-  return resource;
+	return http.Resource{
+		Uris: []string{"/hello/:name"},
+		Methods: map[string]interface{}{
+			"GET": get,
+		},
+	}
 }
 
 // This is registered, so it will output as expected
