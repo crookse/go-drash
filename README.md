@@ -25,15 +25,15 @@ func HomeResource() http.Resource {
 }
 
 // This is registered, so it will output as expected
-func get(request http.Request, response http.Response) http.Response {
-  response.Body = "Hello World! Go + Drash is cool!"
-  return response
+func get(r http.Request) http.Response {
+  r.response.Body = "Hello World! Go + Drash is cool!"
+  return r.response
 }
 
 // This is not registered, so it will throw a 405 error
-func post(request http.Request, response http.Response) http.Response {
-  response.Body = "test"
-  return response
+func post(r http.Request) http.Response {
+  r.response.Body = "test"
+  return r.response
 }
 ```
 
