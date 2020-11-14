@@ -19,10 +19,15 @@ type methods map[string]interface{}
 
 type Resource struct {
 	// Http methods
-	DELETE func(r *Request) Response
-	GET    func(r *Request) Response
-	POST   func(r *Request) Response
-	PUT    func(r *Request) Response
+	CONNECT func(r *Request) Response
+	DELETE  func(r *Request) Response
+	GET     func(r *Request) Response
+	HEAD    func(r *Request) Response
+	OPTIONS func(r *Request) Response
+	PATCH   func(r *Request) Response
+	POST    func(r *Request) Response
+	PUT     func(r *Request) Response
+	TRACE   func(r *Request) Response
 
 	Methods    methods
 	Uris       []string
