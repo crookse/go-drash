@@ -2,8 +2,8 @@ package http
 
 import (
 	"fmt"
-	"reflect"
 	"log"
+	"reflect"
 
 	"github.com/drashland/go-drash/errors"
 	"github.com/valyala/fasthttp"
@@ -25,7 +25,7 @@ type Server struct {
 
 type HttpOptions struct {
 	Hostname string
-	Port int
+	Port     int
 }
 
 // Add resources to the server
@@ -34,9 +34,9 @@ func (s Server) AddResources(resourcesArr []func() Resource) {
 	for i := range resourcesArr {
 		resource := resourcesArr[i]()
 		resource.Methods = map[string]interface{}{
-			"GET": resource.GET,
-			"POST": resource.POST,
-			"PUT": resource.PUT,
+			"GET":    resource.GET,
+			"POST":   resource.POST,
+			"PUT":    resource.PUT,
 			"DELETE": resource.DELETE,
 		}
 		resources = append(resources, resource)
@@ -62,7 +62,7 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 		ctx.SetBody([]byte(err.Message))
 		return
 	}
-	
+
 	resourceResponse, err := callHttpMethod(resource, method, request)
 
 	if err != nil {
@@ -94,7 +94,7 @@ func (s *Server) Run(o HttpOptions) {
 func callHttpMethod(
 	resource Resource,
 	funcName string,
-	params ... interface{},
+	params ...interface{},
 ) (response Response, err *errors.HttpError) {
 	f := reflect.ValueOf(resource.Methods[funcName])
 
@@ -107,10 +107,10 @@ func callHttpMethod(
 		return r, err
 	}
 
-    in := make([]reflect.Value, len(params))
-    for k, param := range params {
-        in[k] = reflect.ValueOf(param)
-    }
+	in := make([]reflect.Value, len(params))
+	for k, param := range params {
+		in[k] = reflect.ValueOf(param)
+	}
 
 	var result []reflect.Value
 	result = f.Call(in)
@@ -139,7 +139,7 @@ func (s Server) findResource(uri string) (Resource, *errors.HttpError) {
 
 // Handle server errors -- making sure to send HTTP error responses. HTTP error
 // responses should always have a code and a message.
-func (s Server) handleError(code int, message string) (*errors.HttpError) {
+func (s Server) handleError(code int, message string) *errors.HttpError {
 	e := new(errors.HttpError)
 	e.Code = code
 	e.Message = message

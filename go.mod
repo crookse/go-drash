@@ -1,4 +1,4 @@
-module github.com/drashland/godrash
+module github.com/drashland/go-drash
 
 go 1.13
 
