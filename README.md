@@ -23,7 +23,7 @@ func HomeResource() http.Resource {
 		},
 
 		GET: func (r http.Request) http.Response {
-			r.Response.Body = "Hello World!"
+			r.Response.Body = "Hello World! Go + Drash is cool!"
 			return r.Response
 		},
 	}
