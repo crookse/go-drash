@@ -1,6 +1,6 @@
 # Go Drash
 
-A REST microframework for Go -- built on top of fasthttp.
+A REST microframework for Go built on top of [fasthttp](https://github.com/valyala/fasthttp).
 
 ## Quickstart
 
