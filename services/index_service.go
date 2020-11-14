@@ -4,19 +4,26 @@ import (
 	"strings"
 )
 
-type SearchResult struct {
+type IndexService struct {
+	Cache       map[string][]IndexServiceSearchResult
+	Index       map[string][]int
+	LookupTable map[int]interface{}
+}
+
+type IndexServiceSearchResult struct {
 	Id         int
 	Item       interface{}
 	Query      string
 	SearchTerm string
 }
 
-type IndexService struct {
-	Cache       map[string][]SearchResult // e.g., ["query" []SearchResult]
-	Index       map[string][]int       // e.g., ["query", [1,2,3,4,5]]
-	LookupTable map[int]interface{}      // e.g., [1, SomeType]
-}
+///////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - METHODS - EXPORTED ///////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
+// This adds an item to the index -- allowing them to be searchable by the
+// given search terms. When a search is conducted via .Search(), the query
+// passed into the .Search() method is used to match against all search terms.
 func (i IndexService) AddItem(searchTerms []string, item interface{}) {
 	id := len(i.LookupTable)
 
@@ -33,17 +40,18 @@ func (i IndexService) AddItem(searchTerms []string, item interface{}) {
 	}
 }
 
-func (i IndexService) Search(query string) []SearchResult {
+// This searches the index for items that match the given query.
+func (i IndexService) Search(query string) []IndexServiceSearchResult {
 	if i.Cache[query] != nil {
 		return i.Cache[query]
 	}
 
-	results := []SearchResult{}
+	results := []IndexServiceSearchResult{}
 
 	for i1, ids := range i.Index {
 		if strings.Contains(i1, query) {
 			for i2 := range ids {
-				result := SearchResult{
+				result := IndexServiceSearchResult{
 					Id: ids[i2],
 					Item: i.LookupTable[ids[i2]],
 					Query: query,

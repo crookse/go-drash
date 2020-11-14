@@ -19,8 +19,8 @@ var _resources = []Resource{}
 var _responseContentType = "application/json"
 
 var _services = map[string]interface{}{
-	"ResourceIndexService": &services.IndexService{
-		Cache: map[string][]services.SearchResult{},
+	"ResourceIndexService": services.IndexService{
+		Cache: map[string][]services.IndexServiceSearchResult{},
 		LookupTable: map[int]interface{}{},
 		Index: map[string][]int{},
 	},
@@ -130,7 +130,7 @@ func (s *Server) buildResourcesTable() {
 		// resource table can be searched by a given URI -- being matched using
 		// regex.
 		for k := range resource.UrisParsed {
-			_services["ResourceIndexService"].(*services.IndexService).AddItem(
+			_services["ResourceIndexService"].(services.IndexService).AddItem(
 				[]string{resource.UrisParsed[k].RegexPath},
 				&resource,
 			)
@@ -151,7 +151,7 @@ func buildError(code int, message string) *errors.HttpError {
 // not being defined to handle the URI in question.
 func findResource(uri string) (*Resource) {
 
-	var results = _services["ResourceIndexService"].(*services.IndexService).Search(uri)
+	var results = _services["ResourceIndexService"].(services.IndexService).Search(uri)
 
 	if len(results) > 0 {
 		return results[0].Item.(*Resource)
