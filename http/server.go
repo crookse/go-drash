@@ -44,29 +44,34 @@ type Server struct {
 func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 
 	// Make a "Drash" request -- basically a wrapper around fasthttp's request
-	request := Request{
+	request := &Request{
 		Ctx: ctx,
-		Response: &Response{
+		Response: Response{
 			ContentType: _responseContentType,
+			StatusCode: 200,
 		},
 	}
 
 	uri := string(request.Ctx.Path())
-	method := string(request.Ctx.Method())
+	requestMethod := string(request.Ctx.Method())
 
 	// Find the resource that matches the request's URI the best
-	resource, err := findResource(uri)
-	if err != nil {
-		request.SendError(err.Code, err.Message);
+	resource := findResource(uri)
+	if resource == nil {
+		request.SendError(404, "Not Found");
+		return
+	}
+
+	// If the HTTP method does not exist on the resource, then that method is
+	// not allowed
+	httpMethod := resource.Methods[requestMethod]
+	if reflect.ValueOf(httpMethod).IsNil() {
+		request.SendError(405, "Method Not Allowed")
 		return
 	}
 
 	// Make the request
-	_, err = callHttpMethod(resource, method, request)
-	if err != nil {
-		request.SendError(err.Code, err.Message);
-		return
-	}
+	_ = httpMethod.(func(r *Request) Response)(request)
 
 	// Finally, send the response. The response content type, status code, and
 	// body should all be set before this method is called.
@@ -127,46 +132,10 @@ func (s *Server) buildResourcesTable() {
 		for k := range resource.UrisParsed {
 			_services["ResourceIndexService"].(*services.IndexService).AddItem(
 				[]string{resource.UrisParsed[k].RegexPath},
-				resource,
+				&resource,
 			)
 		}
 	}
-}
-// This code was taken from the following article:
-// medium.com/@vicky.kurniawan/go-call-a-function-from-string-name-30b41dcb9e12
-//
-// This code is used to allow "indexing" of a resource's HTTP methods. Without
-// this code, we would not be be able to make calls like the following:
-//
-//     resource[request.Method()].
-//
-// This is similar to how deno-drash makes its HTTP calls.
-func callHttpMethod(
-	resource Resource,
-	funcName string,
-	args ...interface{},
-) (response *Response, err *errors.HttpError) {
-	f := reflect.ValueOf(resource.Methods[funcName])
-
-	// Is the method defined?
-	if !f.IsValid() || f.IsNil() {
-		return nil, buildError(405, "Method Not Allowed")
-	}
-
-	in := make([]reflect.Value, len(args))
-	for i, arg := range args {
-		in[i] = reflect.ValueOf(arg)
-	}
-
-	var result []reflect.Value
-	result = f.Call(in)
-
-	if len(result) > 0 {
-		data := result[0].Interface().(*Response)
-		return data, nil
-	}
-
-	return nil, buildError(418, "I'm a teapot")
 }
 
 // Build an HTTP error response (e.g., a 404 Not Found error response)
@@ -180,13 +149,13 @@ func buildError(code int, message string) *errors.HttpError {
 // Find the best matching resource based on the request's URI. If a resource
 // cannot be found, then that is a 404 error -- most likey due to a resource
 // not being defined to handle the URI in question.
-func findResource(uri string) (Resource, *errors.HttpError) {
+func findResource(uri string) (*Resource) {
 
 	var results = _services["ResourceIndexService"].(*services.IndexService).Search(uri)
 
 	if len(results) > 0 {
-		return results[0].Item.(Resource), nil
+		return results[0].Item.(*Resource)
 	}
 
-	return Resource{}, buildError(404, "Not Found")
+	return nil
 }
