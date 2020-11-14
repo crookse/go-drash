@@ -69,7 +69,7 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 
 // Run the server
 func (s Server) Run(o ServerOptions) {
-	addResources(s)
+	s.compile()
 
 	if s.ResponseContentType != "" {
 		responseContentType = s.ResponseContentType
@@ -88,15 +88,11 @@ func (s Server) Run(o ServerOptions) {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Add resources to the server
-func addResources(s Server) {
+func (s *Server) addResources(r *services.IndexService) {
 
-	s.Services["ResourceIndexService"] = services.IndexService{
-		LookupTable: map[int]interface{}
-	}
-
-	for i := range s.resourcesArr {
+	for i := range s.Resources {
 		// Create the resource
-		resource := s.resourcesArr[i]()
+		resource := s.Resources[i]()
 
 		// TODO(crookse) Turn interface into ResourceHttpMethods struct
 		resource.Methods = map[string]interface{}{
@@ -110,18 +106,26 @@ func addResources(s Server) {
 		// request URIs to the resource's URIs.
 		resource.ParseUris()
 
-		s.Services["ResourceIndexService"].AddItem(
-			resource.UrisParsed.RegexPath,
-			resource,
-		)
+		for k := range resource.UrisParsed {
+			r.AddItem(
+				[]string{resource.UrisParsed[k].RegexPath},
+				resource,
+			)
+		}
+	}
+}
+
+func (s *Server) compile() {
+	ris := new(services.IndexService)
+	ris.Cache = map[string][]services.SearchResult{}
+	ris.LookupTable = map[int]interface{}{}
+	ris.Index = map[string][]int{}
+
+	s.Services = map[string]interface{}{
+		"ResourceIndexService": ris,
 	}
 
-      // Include the regex path in the index, so we can search for the regex
-      // path during runtime in `.buildResource()`
-      this.services.resource_index_service.addItem(
-        [paths.regex_path],
-        resourceClass,
-      );
+	s.addResources(ris)
 }
 
 // This code was taken from the following article:

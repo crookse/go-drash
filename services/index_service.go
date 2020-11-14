@@ -1,55 +1,56 @@
 package services
 
 import (
-	"regexp"
 	"strings"
-
-	"github.com/drashland/go-drash/http"
 )
 
 type SearchResult struct {
-	ID         int
-	Item       interface
+	Id         int
+	Item       interface{}
 	Query      string
 	SearchTerm string
 }
 
 type IndexService struct {
-	Cache       map[int][]SearchResult // e.g., [1, []SearchResult]
+	Cache       map[string][]SearchResult // e.g., ["query" []SearchResult]
 	Index       map[string][]int       // e.g., ["query", [1,2,3,4,5]]
-	LookupTable map[int]interface      // e.g., [1, SomeType]
+	LookupTable map[int]interface{}      // e.g., [1, SomeType]
 }
 
-func (i IndexService) AddItem(searchTerms []string, item T) {
+func (i *IndexService) AddItem(searchTerms []string, item interface{}) int {
 	id := len(i.LookupTable)
 
 	i.LookupTable[id] = item
 
-	for i := range searchTerms {
-		ids := i.Index[searchTerms[i]]
+	for iSt := range searchTerms {
+		query := searchTerms[iSt]
+		var ids = i.Index[query]
 		if ids == nil {
-			ids := []int{}
+			ids = []int{}
 		}
 		ids = append(ids, id)
-		s.Index[searchTerm] = ids
+		i.Index[query] = ids
 	}
+
+	return 0
 }
 
-func (i IndexService) Search(query string) map[int][]SearchResult {
+func (i *IndexService) Search(query string) []SearchResult {
 	if i.Cache[query] != nil {
 		return i.Cache[query]
 	}
 
-	results map[int][]SearchResult
-	for key, ids := range i.Index {
-		if key.Contains(query) {
-			for i, id := range ids {
-				results[id] = SearchResult{
-					Id: id,
-					Item: i.LookupTable[id]
-					SearchTerm: key,
+	results := []SearchResult{}
+
+	for i1, ids := range i.Index {
+		if strings.Contains(i1, query) {
+			for i2 := range ids {
+				result := SearchResult{
+					Id: ids[i2],
+					Item: i.LookupTable[ids[i2]],
 					Query: query,
 				}
+				results = append(results, result)
 			}
 		}
 	}
