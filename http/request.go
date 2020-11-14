@@ -9,6 +9,6 @@ import (
 ///////////////////////////////////////////////////////////////////////////////
 
 type Request struct {
-	Ctx *fasthttp.RequestCtx
+	Ctx      *fasthttp.RequestCtx
 	Response Response
 }

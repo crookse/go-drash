@@ -6,12 +6,12 @@ import (
 )
 
 var regexUriMatches = regexp.MustCompile("(:[^(/]+|{[^0-9][^}]*})")
-var regexUriReplacement= "([^/]+)"
+var regexUriReplacement = "([^/]+)"
 var regexUriColon = regexp.MustCompile(":")
 
 type ResourceUrisParsed struct {
-	OgPath string
-	RegexPath string
+	OgPath         string
+	RegexPath      string
 	PathParamNames []string
 }
 
@@ -20,14 +20,14 @@ type methods map[string]interface{}
 type Resource struct {
 	// Http methods
 	DELETE func(r Request) Response
-	GET func(r Request) Response
-	POST func(r Request) Response
-	PUT func(r Request) Response
+	GET    func(r Request) Response
+	POST   func(r Request) Response
+	PUT    func(r Request) Response
 
-	Methods methods
-	Uris []string
+	Methods    methods
+	Uris       []string
 	UrisParsed []ResourceUrisParsed
-	response Response
+	response   Response
 }
 
 func (r *Resource) ParseUris() {
@@ -43,8 +43,8 @@ func (r *Resource) ParseUris() {
 
 func parseUri(path string) ResourceUrisParsed {
 	return ResourceUrisParsed{
-		OgPath: path,
-		RegexPath: getRegexPath(path),
+		OgPath:         path,
+		RegexPath:      getRegexPath(path),
 		PathParamNames: getPathParamNames(path),
 	}
 }
