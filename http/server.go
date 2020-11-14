@@ -28,10 +28,18 @@ type HttpOptions struct {
 
 // Add resources to the server
 func (s Server) AddResources(resourcesArr ... func() Resource) {
+
 	for i := range resourcesArr {
 		resource := resourcesArr[i]()
+		resource.Methods = map[string]interface{}{
+			"GET": resource.GET,
+			"POST": resource.POST,
+			"PUT": resource.PUT,
+			"DELETE": resource.DELETE,
+		}
 		resources = append(resources, resource)
 	}
+
 	for i := range resources {
 		resource := resources[i]
 		resource.ParseUris()
@@ -88,7 +96,7 @@ func callHttpMethod(
 	f := reflect.ValueOf(resource.Methods[funcName])
 
 	// Is the method defined?
-	if !f.IsValid() {
+	if !f.IsValid() || f.IsNil() {
 		var err = new(errors.HttpError)
 		err.Code = 405
 		err.Message = "Method Not Allowed"

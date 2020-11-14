@@ -17,9 +17,14 @@ import (
 
 func HomeResource() http.Resource {
 	return http.Resource{
-		Uris: []string{"/hello/:name"},
-		Methods: map[string]interface{}{
-			"GET": get,
+
+		Uris: []string{
+			"/hello/:name",
+		},
+
+		GET: func (r http.Request) http.Response {
+			r.Response.Body = "Hello World!"
+			return r.Response
 		},
 	}
 }
