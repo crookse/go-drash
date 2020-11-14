@@ -19,10 +19,10 @@ type methods map[string]interface{}
 
 type Resource struct {
 	// Http methods
-	DELETE func(r Request) Response
-	GET    func(r Request) Response
-	POST   func(r Request) Response
-	PUT    func(r Request) Response
+	DELETE func(r Request) *Response
+	GET    func(r Request) *Response
+	POST   func(r Request) *Response
+	PUT    func(r Request) *Response
 
 	Methods    methods
 	Uris       []string
@@ -31,11 +31,9 @@ type Resource struct {
 }
 
 func (r *Resource) ParseUris() {
-	var uris = []ResourceUrisParsed{}
-
-	for i := range r.Uris {
-		uri := r.Uris[i]
-		uris = append(r.UrisParsed, parseUri(uri))
+	uris := make([]ResourceUrisParsed, len(r.Uris))
+	for i, uri := range r.Uris {
+		uris[i] = parseUri(uri)
 	}
 
 	r.UrisParsed = uris
