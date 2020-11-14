@@ -17,7 +17,7 @@ type IndexService struct {
 	LookupTable map[int]interface{}      // e.g., [1, SomeType]
 }
 
-func (i *IndexService) AddItem(searchTerms []string, item interface{}) int {
+func (i IndexService) AddItem(searchTerms []string, item interface{}) {
 	id := len(i.LookupTable)
 
 	i.LookupTable[id] = item
@@ -31,11 +31,9 @@ func (i *IndexService) AddItem(searchTerms []string, item interface{}) int {
 		ids = append(ids, id)
 		i.Index[query] = ids
 	}
-
-	return 0
 }
 
-func (i *IndexService) Search(query string) []SearchResult {
+func (i IndexService) Search(query string) []SearchResult {
 	if i.Cache[query] != nil {
 		return i.Cache[query]
 	}
@@ -54,7 +52,7 @@ func (i *IndexService) Search(query string) []SearchResult {
 			}
 		}
 	}
-
+	
 	i.Cache[query] = results
 
 	return results

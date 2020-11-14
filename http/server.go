@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"regexp"
 
 	"github.com/drashland/go-drash/services"
 	"github.com/drashland/go-drash/errors"
@@ -15,8 +14,17 @@ import (
 // FILE MARKER - VARIABLE DECLARATIONS ////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-var resources = []Resource{}
-var responseContentType = "application/json"
+var _resources = []Resource{}
+
+var _responseContentType = "application/json"
+
+var _services = map[string]interface{}{
+	"ResourceIndexService": &services.IndexService{
+		Cache: map[string][]services.SearchResult{},
+		LookupTable: map[int]interface{}{},
+		Index: map[string][]int{},
+	},
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // FILE MARKER - MEMBERS EXPORTED /////////////////////////////////////////////
@@ -30,19 +38,17 @@ type ServerOptions struct {
 type Server struct {
 	Resources           []func() Resource
 	ResponseContentType string
-	Services            map[string]interface{}
 }
 
 // Handle all HTTP requests with this function
 func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 
 	// Make a "Drash" request -- basically a wrapper around fasthttp's request
-	res := &Response{
-		ContentType: responseContentType,
-	}
 	request := Request{
 		Ctx: ctx,
-		Response: res,
+		Response: &Response{
+			ContentType: _responseContentType,
+		},
 	}
 
 	uri := string(request.Ctx.Path())
@@ -68,11 +74,11 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 }
 
 // Run the server
-func (s Server) Run(o ServerOptions) {
-	s.compile()
+func (s *Server) Run(o ServerOptions) {
+	s.build()
 
 	if s.ResponseContentType != "" {
-		responseContentType = s.ResponseContentType
+		_responseContentType = s.ResponseContentType
 	}
 
 	address := fmt.Sprintf("%s:%d", o.Hostname, o.Port)
@@ -87,8 +93,17 @@ func (s Server) Run(o ServerOptions) {
 // FILE MARKER - MEMBERS NOT EXPORTED /////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// Add resources to the server
-func (s *Server) addResources(r *services.IndexService) {
+// This builds the server. Run anything that needs to process during compile
+// time in this function.
+func (s *Server) build() {
+	s.buildResourcesTable()
+}
+
+// This builds the resources table. During runtime, the resources table is used
+// to match a request's URI to a resource. If a resource is found, the resource
+// takes responsibility of handling the request. If a resource is not found,
+// then a 404 error is thrown.
+func (s *Server) buildResourcesTable() {
 
 	for i := range s.Resources {
 		// Create the resource
@@ -106,28 +121,17 @@ func (s *Server) addResources(r *services.IndexService) {
 		// request URIs to the resource's URIs.
 		resource.ParseUris()
 
+		// Add the resource to the resources table. Each resource added to the
+		// resource table can be searched by a given URI -- being matched using
+		// regex.
 		for k := range resource.UrisParsed {
-			r.AddItem(
+			_services["ResourceIndexService"].(*services.IndexService).AddItem(
 				[]string{resource.UrisParsed[k].RegexPath},
 				resource,
 			)
 		}
 	}
 }
-
-func (s *Server) compile() {
-	ris := new(services.IndexService)
-	ris.Cache = map[string][]services.SearchResult{}
-	ris.LookupTable = map[int]interface{}{}
-	ris.Index = map[string][]int{}
-
-	s.Services = map[string]interface{}{
-		"ResourceIndexService": ris,
-	}
-
-	s.addResources(ris)
-}
-
 // This code was taken from the following article:
 // medium.com/@vicky.kurniawan/go-call-a-function-from-string-name-30b41dcb9e12
 //
@@ -178,15 +182,10 @@ func buildError(code int, message string) *errors.HttpError {
 // not being defined to handle the URI in question.
 func findResource(uri string) (Resource, *errors.HttpError) {
 
-	for i := 0; i < len(resources); i++ {
-		for k := 0; i < len(resources[i].UrisParsed); k++ {
-			pathObj := resources[i].UrisParsed[k]
-			re := regexp.MustCompile(pathObj.RegexPath)
-			matches := re.FindAllString(uri, -1)
-			if len(matches) > 0 {
-				return resources[i], nil
-			}
-		}
+	var results = _services["ResourceIndexService"].(*services.IndexService).Search(uri)
+
+	if len(results) > 0 {
+		return results[0].Item.(Resource), nil
 	}
 
 	return Resource{}, buildError(404, "Not Found")
