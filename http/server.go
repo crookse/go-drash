@@ -114,12 +114,22 @@ func (s *Server) buildServerResourcesTable() {
 		// Create the resource
 		resource := s.Resources[i]()
 
-		// TODO(crookse) Turn interface into ResourceHttpMethods struct
+		// Create the HTTP methods map for the resource. This will be used
+		// during runtime to see if HTTP methods exist on the resource. For
+		// example, when a request is made, the request's method is checked
+		// against this map. If the method in the map is not nil, then that
+		// means the resource can handle the request's method. Otherwise, a
+		// 405 error is thrown.
 		resource.Methods = map[string]interface{}{
-			"GET":    resource.GET,
-			"POST":   resource.POST,
-			"PUT":    resource.PUT,
-			"DELETE": resource.DELETE,
+			"CONNECT": resource.CONNECT,
+			"DELETE":  resource.DELETE,
+			"GET":     resource.GET,
+			"HEAD":    resource.HEAD,
+			"OPTIONS": resource.OPTIONS,
+			"PATCH":   resource.PATCH,
+			"POST":    resource.POST,
+			"PUT":     resource.PUT,
+			"TRACE":   resource.TRACE,
 		}
 
 		// Parse all URIs associated with this resource so that we can match
