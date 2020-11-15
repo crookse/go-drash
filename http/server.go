@@ -5,8 +5,8 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/drashland/go-drash/services"
 	"github.com/drashland/go-drash/errors"
+	"github.com/drashland/go-drash/services"
 	"github.com/valyala/fasthttp"
 )
 
@@ -20,9 +20,9 @@ var _responseContentType = "application/json"
 
 var _services = map[string]interface{}{
 	"ResourceIndexService": services.IndexService{
-		Cache: map[string][]services.IndexServiceSearchResult{},
+		Cache:       map[string][]services.IndexServiceSearchResult{},
 		LookupTable: map[int]interface{}{},
-		Index: map[string][]int{},
+		Index:       map[string][]int{},
 	},
 }
 
@@ -48,7 +48,7 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 		Ctx: ctx,
 		Response: Response{
 			ContentType: _responseContentType,
-			StatusCode: 200,
+			StatusCode:  200,
 		},
 	}
 
@@ -58,7 +58,7 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 	// Find the resource that matches the request's URI the best
 	resource := findResource(uri)
 	if resource == nil {
-		request.SendError(404, "Not Found");
+		request.SendError(404, "Not Found")
 		return
 	}
 
@@ -95,20 +95,20 @@ func (s *Server) Run(o ServerOptions) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// FILE MARKER - MEMBERS NOT EXPORTED /////////////////////////////////////////
+// FILE MARKER - METHODS - NOT EXPORTED ///////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 // This builds the server. Run anything that needs to process during compile
 // time in this function.
-func (s *Server) build() {
-	s.buildResourcesTable()
+func (s *Server) buildServer() {
+	s.buildServerResourcesTable()
 }
 
 // This builds the resources table. During runtime, the resources table is used
 // to match a request's URI to a resource. If a resource is found, the resource
 // takes responsibility of handling the request. If a resource is not found,
 // then a 404 error is thrown.
-func (s *Server) buildResourcesTable() {
+func (s *Server) buildServerResourcesTable() {
 
 	for i := range s.Resources {
 		// Create the resource
@@ -131,25 +131,17 @@ func (s *Server) buildResourcesTable() {
 		// regex.
 		for k := range resource.UrisParsed {
 			_services["ResourceIndexService"].(services.IndexService).AddItem(
-				[]string{resource.UrisParsed[k].RegexPath},
+				[]string{resource.UrisParsed[k].RegexUri},
 				&resource,
 			)
 		}
 	}
 }
 
-// Build an HTTP error response (e.g., a 404 Not Found error response)
-func buildError(code int, message string) *errors.HttpError {
-	e := new(errors.HttpError)
-	e.Code = code
-	e.Message = message
-	return e
-}
-
 // Find the best matching resource based on the request's URI. If a resource
 // cannot be found, then that is a 404 error -- most likey due to a resource
 // not being defined to handle the URI in question.
-func findResource(uri string) (*Resource) {
+func (s *Server) findResource(uri string) *Resource {
 
 	var results = _services["ResourceIndexService"].(services.IndexService).Search(uri)
 
