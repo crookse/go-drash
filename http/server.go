@@ -5,7 +5,6 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/drashland/go-drash/errors"
 	"github.com/drashland/go-drash/services"
 	"github.com/valyala/fasthttp"
 )
@@ -27,36 +26,31 @@ var _services = map[string]interface{}{
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// FILE MARKER - MEMBERS EXPORTED /////////////////////////////////////////////
+// FILE MARKER - STRUCTS //////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
-type ServerOptions struct {
-	Hostname string
-	Port     int
-}
 
 type Server struct {
 	Resources           []func() Resource
 	ResponseContentType string
 }
 
-// Handle all HTTP requests with this function
-func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
+type ServerOptions struct {
+	Hostname string
+	Port     int
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - METHODS - EXPORTED ///////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+// This method handles all incoming requests.
+func (s Server) HandleIncomingRequest(ctx *fasthttp.RequestCtx) {
 
 	// Make a "Drash" request -- basically a wrapper around fasthttp's request
-	request := &Request{
-		Ctx: ctx,
-		Response: Response{
-			ContentType: _responseContentType,
-			StatusCode:  200,
-		},
-	}
-
-	uri := string(request.Ctx.Path())
-	requestMethod := string(request.Ctx.Method())
+	request := s.buildRequest(ctx)
 
 	// Find the resource that matches the request's URI the best
-	resource := findResource(uri)
+	resource := s.findResource(request.Uri)
 	if resource == nil {
 		request.SendError(404, "Not Found")
 		return
@@ -64,7 +58,7 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 
 	// If the HTTP method does not exist on the resource, then that method is
 	// not allowed
-	httpMethod := resource.Methods[requestMethod]
+	httpMethod := resource.Methods[request.Method]
 	if reflect.ValueOf(httpMethod).IsNil() {
 		request.SendError(405, "Method Not Allowed")
 		return
@@ -78,16 +72,17 @@ func (s Server) HandleRequest(ctx *fasthttp.RequestCtx) {
 	request.Send()
 }
 
-// Run the server
-func (s *Server) Run(o ServerOptions) {
-	s.build()
+// This method runs the server at the specified hostname and port given in the
+// ServerOptions.
+func (s Server) Run(o ServerOptions) {
+	s.buildServer()
 
 	if s.ResponseContentType != "" {
 		_responseContentType = s.ResponseContentType
 	}
 
 	address := fmt.Sprintf("%s:%d", o.Hostname, o.Port)
-	err := fasthttp.ListenAndServe(address, s.HandleRequest)
+	err := fasthttp.ListenAndServe(address, s.HandleIncomingRequest)
 
 	if err != nil {
 		log.Fatalf("Error in ListenAndServe: %s", err)
@@ -98,9 +93,41 @@ func (s *Server) Run(o ServerOptions) {
 // FILE MARKER - METHODS - NOT EXPORTED ///////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+// This method builds a request. It is essentially a "Drash" request wrapped
+// around fasthttp's request.
+func (s Server) buildRequest(ctx *fasthttp.RequestCtx) *Request {
+	return &Request{
+		Ctx: ctx,
+		Method: string(ctx.Method()),
+		Response: Response{
+			ContentType: _responseContentType,
+			StatusCode:  200,
+		},
+		Uri: string(ctx.Path()),
+	}
+}
+
+// This methods builds and returns a map of HTTP methods that the resource has
+// or does not have.
+func (s Server) buildResourceHttpMethodsMap(
+	resource Resource,
+) map[string]interface{} {
+	return map[string]interface{}{
+		"CONNECT": resource.CONNECT,
+		"DELETE":  resource.DELETE,
+		"GET":     resource.GET,
+		"HEAD":    resource.HEAD,
+		"OPTIONS": resource.OPTIONS,
+		"PATCH":   resource.PATCH,
+		"POST":    resource.POST,
+		"PUT":     resource.PUT,
+		"TRACE":   resource.TRACE,
+	}
+}
+
 // This builds the server. Run anything that needs to process during compile
 // time in this function.
-func (s *Server) buildServer() {
+func (s Server) buildServer() {
 	s.buildServerResourcesTable()
 }
 
@@ -108,42 +135,16 @@ func (s *Server) buildServer() {
 // to match a request's URI to a resource. If a resource is found, the resource
 // takes responsibility of handling the request. If a resource is not found,
 // then a 404 error is thrown.
-func (s *Server) buildServerResourcesTable() {
+func (s Server) buildServerResourcesTable() {
+	for i1 := range s.Resources {
+		resource := s.Resources[i1]()
 
-	for i := range s.Resources {
-		// Create the resource
-		resource := s.Resources[i]()
+		resource.Methods = s.buildResourceHttpMethodsMap(resource)
 
-		// Create the HTTP methods map for the resource. This will be used
-		// during runtime to see if HTTP methods exist on the resource. For
-		// example, when a request is made, the request's method is checked
-		// against this map. If the method in the map is not nil, then that
-		// means the resource can handle the request's method. Otherwise, a
-		// 405 error is thrown.
-		resource.Methods = map[string]interface{}{
-			"CONNECT": resource.CONNECT,
-			"DELETE":  resource.DELETE,
-			"GET":     resource.GET,
-			"HEAD":    resource.HEAD,
-			"OPTIONS": resource.OPTIONS,
-			"PATCH":   resource.PATCH,
-			"POST":    resource.POST,
-			"PUT":     resource.PUT,
-			"TRACE":   resource.TRACE,
-		}
-
-		// Parse all URIs associated with this resource so that we can match
-		// request URIs to the resource's URIs.
 		resource.ParseUris()
 
-		// Add the resource to the resources table. Each resource added to the
-		// resource table can be searched by a given URI -- being matched using
-		// regex.
-		for k := range resource.UrisParsed {
-			_services["ResourceIndexService"].(services.IndexService).AddItem(
-				[]string{resource.UrisParsed[k].RegexUri},
-				&resource,
-			)
+		for i2 := range resource.UrisParsed {
+			s.indexResource(resource, i2)
 		}
 	}
 }
@@ -160,4 +161,12 @@ func (s *Server) findResource(uri string) *Resource {
 	}
 
 	return nil
+}
+
+// This method indexes the given resource.
+func (s Server) indexResource(resource Resource, index int) {
+	_services["ResourceIndexService"].(services.IndexService).AddItem(
+		[]string{resource.UrisParsed[index].RegexUri},
+		&resource,
+	)
 }

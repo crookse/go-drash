@@ -5,17 +5,17 @@ import (
 	"regexp"
 )
 
-////////////////////////////////////////////////////////////////////////////////
-// FILE MARKER - VARIABLE DECLARATIONS /////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - VARIABLE DECLARATIONS ////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 var _regexUriColon = regexp.MustCompile(":")
 var _regexUriMatches = regexp.MustCompile("(:[^(/]+|{[^0-9][^}]*})")
 var _regexUriReplacement = "([^/]+)"
 
-////////////////////////////////////////////////////////////////////////////////
-// FILE MARKER - STRUCTS ///////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - STRUCTS //////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 type Resource struct {
 	Methods    map[string]interface{}
@@ -23,10 +23,7 @@ type Resource struct {
 	UrisParsed []ResourceUrisParsed
 	response   Response
 
-	ResourceHttpMethods
-}
-
-type ResourceHttpMethods struct {
+	// HTTP methods
 	CONNECT func(r *Request) Response
 	DELETE  func(r *Request) Response
 	GET     func(r *Request) Response
@@ -47,6 +44,8 @@ type ResourceUrisParsed struct {
 // FILE MARKER - METHODS - EXPORTED ///////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+// This method parses all URIs associated with this resource so that we can
+// match request URIs to the resource's URIs.
 func (r *Resource) ParseUris() {
 	uris := make([]ResourceUrisParsed, len(r.Uris))
 
@@ -61,7 +60,8 @@ func (r *Resource) ParseUris() {
 // FILE MARKER - METHODS - NOT EXPORTED ///////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// Get the regex version of a URI.
+// This methods returns the regex version of a URI. This regex version is used
+// when matching a request URI to a resource.
 func (r *Resource) getRegexVersionOfUri(uri string) string {
 	result := _regexUriMatches.ReplaceAllString(uri, _regexUriReplacement)
 	return fmt.Sprintf("^%s/?$", result)
@@ -75,7 +75,9 @@ func (r *Resource) getUriParamNames(uri string) []string {
 
 	for i := range matches {
 		uri := matches[i]
-		matches[i] = fmt.Sprintf("%s", _regexUriColon.ReplaceAllString(uri, ""))
+		matches[i] = fmt.Sprintf(
+			"%s", _regexUriColon.ReplaceAllString(uri, ""),
+		)
 	}
 
 	return matches

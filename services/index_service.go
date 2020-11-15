@@ -4,6 +4,10 @@ import (
 	"strings"
 )
 
+///////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - STRUCTS //////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 type IndexService struct {
 	Cache       map[string][]IndexServiceSearchResult
 	Index       map[string][]int
@@ -29,8 +33,8 @@ func (i IndexService) AddItem(searchTerms []string, item interface{}) {
 
 	i.LookupTable[id] = item
 
-	for iSt := range searchTerms {
-		query := searchTerms[iSt]
+	for i1 := range searchTerms {
+		query := searchTerms[i1]
 		var ids = i.Index[query]
 		if ids == nil {
 			ids = []int{}
@@ -46,6 +50,18 @@ func (i IndexService) Search(query string) []IndexServiceSearchResult {
 		return i.Cache[query]
 	}
 
+	results := i.getSearchResults(query)
+
+	i.Cache[query] = results
+
+	return results
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - METHODS - NOT EXPORTED ///////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+func (i IndexService) getSearchResults(query string) []IndexServiceSearchResult {
 	results := []IndexServiceSearchResult{}
 
 	for i1, ids := range i.Index {
@@ -60,8 +76,6 @@ func (i IndexService) Search(query string) []IndexServiceSearchResult {
 			}
 		}
 	}
-	
-	i.Cache[query] = results
 
 	return results
 }
