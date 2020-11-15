@@ -5,20 +5,28 @@ import (
 	"regexp"
 )
 
-var regexUriMatches = regexp.MustCompile("(:[^(/]+|{[^0-9][^}]*})")
-var regexUriReplacement = "([^/]+)"
-var regexUriColon = regexp.MustCompile(":")
+////////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - VARIABLE DECLARATIONS /////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-type ResourceUrisParsed struct {
-	OgPath         string
-	RegexPath      string
-	PathParamNames []string
-}
+var _regexUriColon = regexp.MustCompile(":")
+var _regexUriMatches = regexp.MustCompile("(:[^(/]+|{[^0-9][^}]*})")
+var _regexUriReplacement = "([^/]+)"
 
-type methods map[string]interface{}
+////////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - STRUCTS ///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 type Resource struct {
-	// Http methods
+	Methods    map[string]interface{}
+	Uris       []string
+	UrisParsed []ResourceUrisParsed
+	response   Response
+
+	ResourceHttpMethods
+}
+
+type ResourceHttpMethods struct {
 	CONNECT func(r *Request) Response
 	DELETE  func(r *Request) Response
 	GET     func(r *Request) Response
@@ -28,40 +36,57 @@ type Resource struct {
 	POST    func(r *Request) Response
 	PUT     func(r *Request) Response
 	TRACE   func(r *Request) Response
-
-	Methods    methods
-	Uris       []string
-	UrisParsed []ResourceUrisParsed
-	response   Response
 }
+
+type ResourceUrisParsed struct {
+	RegexUri      string
+	UriParamNames []string
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - METHODS - EXPORTED ///////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 func (r *Resource) ParseUris() {
 	uris := make([]ResourceUrisParsed, len(r.Uris))
+
 	for i, uri := range r.Uris {
-		uris[i] = parseUri(uri)
+		uris[i] = r.parseUri(uri)
 	}
 
 	r.UrisParsed = uris
 }
 
-func parseUri(path string) ResourceUrisParsed {
-	return ResourceUrisParsed{
-		OgPath:         path,
-		RegexPath:      getRegexPath(path),
-		PathParamNames: getPathParamNames(path),
-	}
-}
+///////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - METHODS - NOT EXPORTED ///////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
-func getRegexPath(path string) string {
-	result := regexUriMatches.ReplaceAllString(path, regexUriReplacement)
+// Get the regex version of a URI.
+func (r *Resource) getRegexVersionOfUri(uri string) string {
+	result := _regexUriMatches.ReplaceAllString(uri, _regexUriReplacement)
 	return fmt.Sprintf("^%s/?$", result)
 }
 
-func getPathParamNames(path string) []string {
-	matches := regexUriMatches.FindAllString(path, -1)
+// This method gets the names of all URI params in the resource's URIs. For
+// example, if a resource defines /uri/:something in its URIs, then
+// "something" will become a uri param name.
+func (r *Resource) getUriParamNames(uri string) []string {
+	matches := _regexUriMatches.FindAllString(uri, -1)
+
 	for i := range matches {
 		uri := matches[i]
-		matches[i] = fmt.Sprintf("%s", regexUriColon.ReplaceAllString(uri, ""))
+		matches[i] = fmt.Sprintf("%s", _regexUriColon.ReplaceAllString(uri, ""))
 	}
+
 	return matches
+}
+
+// This method expands a URI into parsable parts for runtime purposes. During
+// runtime, the RegexUri is used to match a request URI against and the
+// UriParamNames are used to match URI param values to a URI param name.
+func (r *Resource) parseUri(uri string) ResourceUrisParsed {
+	return ResourceUrisParsed{
+		RegexUri:     r.getRegexVersionOfUri(uri),
+		UriParamNames: r.getUriParamNames(uri),
+	}
 }
